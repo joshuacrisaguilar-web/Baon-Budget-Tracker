@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-900 selection:bg-emerald-500 selection:text-white">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Baon Budget Tracker - Mobile App</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        emerald: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            400: '#34d399',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                        },
+                        navy: {
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#080d1a',
+                        }
+                    },
+                    boxShadow: {
+                        'glow': '0 0 20px -5px rgba(16, 185, 129, 0.3)',
+                        'float': '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Mobile Safe Area Padding for Notch/Home Indicator */
+        .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+        .bottom-safe { bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem); }
+
+        /* Custom Scrollbar for smooth touch scroll */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Mobile Viewport Lock & Tap Highlight Removal */
+        * {
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        input, textarea, select {
+            user-select: auto;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.25s ease-in-out;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Modal Overlay Animations */
+        .modal-enter { animation: modalIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .modal-leave { animation: modalOut 0.2s cubic-bezier(0.7, 0, 0.84, 0) forwards; }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: translateY(100%); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes modalOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(100%); }
+        }
+    </style>
+</head>
+<body class="bg-navy-950 text-slate-100 flex flex-col h-screen w-screen overflow-hidden font-sans antialiased">
+
+    <!-- Mobile Top Header Bar -->
+    <header class="bg-navy-900/95 backdrop-blur-md border-b border-slate-800/80 pt-safe z-30 flex-none sticky top-0">
+        <div class="px-4 py-3 flex items-center justify-between">
+            <!-- App Brand Title -->
+            <div class="flex items-center space-x-2.5" onclick="switchTab('home')">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-emerald-400 flex items-center justify-center text-white shadow-glow font-bold text-lg">
+                    <i class="fa-solid fa-wallet"></i>
+                </div>
+                <div>
+                    <h1 class="font-heading font-extrabold text-base leading-tight text-white tracking-tight flex items-center gap-1.5">
+                        Baon App
+                        <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] px-1.5 py-0.2 rounded-full font-semibold">ICT</span>
+                    </h1>
+                    <p class="text-[10px] text-slate-400 font-medium">Grade 12 Senior High Project</p>
+                </div>
+            </div>
+
+            <!-- Quick Balance Pill Header Display -->
+            <div class="bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-full flex items-center space-x-2 shadow-inner">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="text-[11px] font-medium text-slate-300">Balance:</span>
+                <span id="header-balance" class="text-xs font-bold text-emerald-400">₱0.00</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Scrollable Content Container (App Body) -->
+    <main id="main-scroll-container" class="flex-1 overflow-y-auto no-scrollbar px-4 pt-4 pb-28 space-y-5">
+
+        <!-- ================= TAB 1: HOME DASHBOARD VIEW ================= -->
+        <section id="tab-home" class="tab-content active space-y-4">
+            
+            <!-- Quick Greeting & Hero Banner Card -->
+            <div class="relative bg-gradient-to-br from-slate-800 via-navy-900 to-emerald-950/60 rounded-3xl p-5 border border-slate-700/60 shadow-xl overflow-hidden">
+                <div class="absolute -right-6 -bottom-6 opacity-10 text-emerald-400 pointer-events-none">
+                    <i class="fa-solid fa-coins text-[160px]"></i>
+                </div>
+                
+                <div class="relative z-10 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2.5 py-0.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold rounded-full uppercase tracking-wider">
+                            Daily Student Allowance
+                        </span>
+                        <span class="text-[11px] text-slate-400 font-medium flex items-center gap-1">
+                            <i class="fa-regular fa-calendar text-emerald-400"></i> Today
+                        </span>
+                    </div>
+
+                    <div>
+                        <p class="text-xs text-slate-300 font-medium">Remaining Baon</p>
+                        <h2 class="text-3xl font-heading font-black text-white tracking-tight flex items-baseline gap-1" id="home-remaining-balance">
+                            ₱0.00
+                        </h2>
+                    </div>
+
+                    <!-- Progress bar for budget used -->
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-[11px] font-semibold">
+                            <span class="text-slate-400">Daily Spending Progress</span>
+                            <span id="home-spent-percent" class="text-emerald-400">0% spent</span>
+                        </div>
+                        <div class="w-full bg-slate-900/80 h-2.5 rounded-full p-0.5 border border-slate-700/50">
+                            <div id="home-budget-progress-bar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- App Quick Actions Row -->
+                    <div class="pt-2 flex items-center gap-2">
+                        <button onclick="openLogModal('allowance')" class="flex-1 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-slate-950 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-glow transition-all">
+                            <i class="fa-solid fa-plus-circle text-sm"></i> Add Allowance
+                        </button>
+                        <button onclick="openLogModal('expense')" class="flex-1 bg-slate-800 hover:bg-slate-700 active:scale-95 text-rose-400 border border-rose-500/30 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all">
+                            <i class="fa-solid fa-minus-circle text-sm"></i> Log Expense
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Financial Summary Mini Cards Grid -->
+            <div class="grid grid-cols-2 gap-3">
+                <!-- Total Allowance Card -->
+                <div class="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/50 flex flex-col justify-between space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Added</span>
+                        <div class="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs">
+                            <i class="fa-solid fa-hand-holding-dollar"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-lg font-bold text-white" id="home-total-income">₱0.00</div>
+                        <p class="text-[10px] text-slate-400">Allowance logged</p>
+                    </div>
+                </div>
+
+                <!-- Total Spent Card -->
+                <div class="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/50 flex flex-col justify-between space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Spent</span>
+                        <div class="w-7 h-7 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center text-xs">
+                            <i class="fa-solid fa-receipt"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-lg font-bold text-rose-400" id="home-total-spent">₱0.00</div>
+                        <p class="text-[10px] text-slate-400">Total expenditures</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Category Breakdown Visualizer -->
+            <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/50 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-chart-pie text-emerald-400"></i> Category Breakdown
+                    </h3>
+                    <button onclick="switchTab('tracker')" class="text-[11px] text-emerald-400 font-semibold hover:underline">View Details</button>
+                </div>
+                <div id="home-category-summary" class="space-y-2.5">
+                    <!-- Dynamic mini category bars populated by JS -->
+                </div>
+            </div>
+
+            <!-- Recent Transactions Quick Preview -->
+            <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/50 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-clock-rotate-left text-blue-400"></i> Recent Expenses
+                    </h3>
+                    <button onclick="switchTab('tracker')" class="text-[11px] text-emerald-400 font-semibold hover:underline">See All</button>
+                </div>
+
+                <div id="home-recent-transactions" class="space-y-2">
+                    <!-- Dynamic Recent List -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 2: EXPENSE TRACKER & HISTORY ================= -->
+        <section id="tab-tracker" class="tab-content space-y-4">
+            
+            <!-- Tracker Header Stats -->
+            <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 flex items-center justify-between">
+                <div>
+                    <p class="text-[10px] text-slate-400 uppercase font-semibold">Remaining Baon</p>
+                    <p class="text-xl font-black text-emerald-400" id="tracker-balance">₱0.00</p>
+                </div>
+                <div class="h-8 w-[1px] bg-slate-700"></div>
+                <div>
+                    <p class="text-[10px] text-slate-400 uppercase font-semibold">Total Spent</p>
+                    <p class="text-xl font-black text-rose-400" id="tracker-spent">₱0.00</p>
+                </div>
+                <div class="h-8 w-[1px] bg-slate-700"></div>
+                <div>
+                    <p class="text-[10px] text-slate-400 uppercase font-semibold">Allowance</p>
+                    <p class="text-xl font-black text-blue-400" id="tracker-allowance">₱0.00</p>
+                </div>
+            </div>
+
+            <!-- Category Spend Progress Visualizer Full List -->
+            <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/50 space-y-3">
+                <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-solid fa-chart-bar text-emerald-400"></i> Category Spending
+                </h3>
+                <div id="tracker-category-progress" class="space-y-3">
+                    <!-- Progress list -->
+                </div>
+            </div>
+
+            <!-- Transaction History Card Section with Filter & Search -->
+            <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/50 space-y-3">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                    <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-receipt text-amber-400"></i> Transaction History
+                    </h3>
+                    <button onclick="clearAllData()" class="text-[10px] text-rose-400 hover:text-rose-300 font-semibold px-2 py-1 bg-rose-500/10 rounded-lg border border-rose-500/20 active:scale-95 transition-all">
+                        <i class="fa-solid fa-trash-can mr-1"></i>Reset All
+                    </button>
+                </div>
+
+                <!-- Search & Category Filter Control Bar -->
+                <div class="space-y-2 pt-1">
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
+                        <input type="text" id="tracker-search-input" oninput="renderExpenseCards()" placeholder="Search expenses..." class="w-full pl-8 pr-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div class="flex gap-1.5 overflow-x-auto no-scrollbar py-1 text-[11px]" id="category-filter-bar">
+                        <button onclick="setCategoryFilter('ALL')" class="cat-filter-btn active bg-emerald-500 text-slate-950 font-bold px-2.5 py-1 rounded-lg shrink-0">All</button>
+                        <button onclick="setCategoryFilter('Food')" class="cat-filter-btn bg-slate-700 text-slate-300 font-medium px-2.5 py-1 rounded-lg shrink-0">Food</button>
+                        <button onclick="setCategoryFilter('Transportation')" class="cat-filter-btn bg-slate-700 text-slate-300 font-medium px-2.5 py-1 rounded-lg shrink-0">Transpo</button>
+                        <button onclick="setCategoryFilter('School Supplies')" class="cat-filter-btn bg-slate-700 text-slate-300 font-medium px-2.5 py-1 rounded-lg shrink-0">Supplies</button>
+                        <button onclick="setCategoryFilter('Projects')" class="cat-filter-btn bg-slate-700 text-slate-300 font-medium px-2.5 py-1 rounded-lg shrink-0">Projects</button>
+                        <button onclick="setCategoryFilter('Savings')" class="cat-filter-btn bg-slate-700 text-slate-300 font-medium px-2.5 py-1 rounded-lg shrink-0">Savings</button>
+                        <button onclick="setCategoryFilter('Others')" class="cat-filter-btn bg-slate-700 text-slate-300 font-medium px-2.5 py-1 rounded-lg shrink-0">Others</button>
+                    </div>
+                </div>
+
+                <!-- Mobile Transaction Cards Stream (Replaces Data Table for Phone screens) -->
+                <div id="tracker-transactions-list" class="space-y-2 pt-1 max-h-[380px] overflow-y-auto no-scrollbar">
+                    <!-- Dynamic Transaction Cards -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 3: SAVINGS GOAL CALCULATOR ================= -->
+        <section id="tab-savings" class="tab-content space-y-4">
+            
+            <div class="text-center space-y-1">
+                <h2 class="text-lg font-heading font-bold text-white flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-piggy-bank text-emerald-400"></i> Savings Target Calculator
+                </h2>
+                <p class="text-xs text-slate-400">Plan daily allowance savings needed for school projects or personal goals.</p>
+            </div>
+
+            <!-- Savings Form Card -->
+            <div class="bg-slate-800/70 p-4 rounded-2xl border border-slate-700/60 shadow-md">
+                <form id="savings-calculator-form" onsubmit="calculateSavingsGoal(event)" class="space-y-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1">Goal Title / Purpose</label>
+                        <input type="text" id="goal-name" required placeholder="e.g., Science Project Materials, Emergency Fund" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1">Target (₱)</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs font-bold">₱</span>
+                                <input type="number" id="goal-target-amount" step="1" min="1" required placeholder="500" class="w-full pl-7 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1">Timeline (Days)</label>
+                            <input type="number" id="goal-target-days" step="1" min="1" max="365" required placeholder="14" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-slate-950 font-bold py-2.5 rounded-xl text-xs shadow-glow transition-all flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-calculator"></i> Calculate Target Savings
+                    </button>
+                </form>
+            </div>
+
+            <!-- Savings Output Card -->
+            <div id="savings-results-card" class="bg-gradient-to-br from-slate-800 to-navy-900 p-4 rounded-2xl border border-emerald-500/30 shadow-lg space-y-3 hidden">
+                <div class="flex items-center justify-between border-b border-slate-700/80 pb-2.5">
+                    <div>
+                        <span class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">Analysis Result</span>
+                        <h3 class="text-sm font-bold text-white" id="res-goal-title">Goal Name</h3>
+                    </div>
+                    <div class="w-8 h-8 bg-emerald-500/20 rounded-full border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-xs">
+                        <i class="fa-solid fa-bullseye"></i>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-700/80">
+                        <p class="text-[10px] text-slate-400 font-medium">Daily Savings Target</p>
+                        <p class="text-base font-black text-emerald-400" id="res-daily-savings">₱0.00 / day</p>
+                        <p class="text-[9px] text-slate-400">Set aside from baon</p>
+                    </div>
+                    <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-700/80">
+                        <p class="text-[10px] text-slate-400 font-medium">Weekly Target (5 Days)</p>
+                        <p class="text-base font-black text-blue-400" id="res-weekly-savings">₱0.00 / week</p>
+                        <p class="text-[9px] text-slate-400">Based on school days</p>
+                    </div>
+                </div>
+
+                <!-- Balance Coverage Indicator -->
+                <div class="space-y-1.5 pt-1">
+                    <div class="flex justify-between text-[10px] text-slate-300 font-semibold">
+                        <span>Current Balance Coverage</span>
+                        <span id="res-coverage-percent" class="text-emerald-400">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                        <div id="res-coverage-bar" class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <p class="text-[10px] text-slate-300 italic text-center pt-1" id="res-advice-text">
+                        Calculation status will appear here.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 4: ABOUT PAGE & ICT METADATA ================= -->
+        <section id="tab-about" class="tab-content space-y-4">
+            
+            <div class="bg-slate-800/70 p-4 rounded-2xl border border-slate-700/60 space-y-2">
+                <span class="inline-block px-2.5 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold rounded-full uppercase tracking-wide">
+                    Empowerment Tech Project
+                </span>
+                <h2 class="text-base font-heading font-bold text-white">About Baon Budget Tracker</h2>
+                <p class="text-xs text-slate-300 leading-relaxed">
+                    Designed for Senior High School students to manage daily allowance, track categorized expenses, build savings habits, and prevent impulse spending.
+                </p>
+            </div>
+
+            <!-- Objectives & Tech Stack -->
+            <div class="bg-slate-800/70 p-4 rounded-2xl border border-slate-700/60 space-y-3">
+                <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-info text-blue-400"></i> Project Info & Tech Stack
+                </h3>
+                
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="p-2.5 bg-slate-900/80 rounded-xl border border-slate-700/80 flex items-center gap-2">
+                        <i class="fa-brands fa-html5 text-orange-400 text-base"></i>
+                        <div><span class="block font-bold text-white text-[11px]">HTML5</span><span class="text-[9px] text-slate-400">Mobile Structure</span></div>
+                    </div>
+                    <div class="p-2.5 bg-slate-900/80 rounded-xl border border-slate-700/80 flex items-center gap-2">
+                        <i class="fa-brands fa-css3-alt text-blue-400 text-base"></i>
+                        <div><span class="block font-bold text-white text-[11px]">Tailwind</span><span class="text-[9px] text-slate-400">Mobile UX Styling</span></div>
+                    </div>
+                    <div class="p-2.5 bg-slate-900/80 rounded-xl border border-slate-700/80 flex items-center gap-2">
+                        <i class="fa-brands fa-js text-yellow-400 text-base"></i>
+                        <div><span class="block font-bold text-white text-[11px]">Vanilla JS</span><span class="text-[9px] text-slate-400">App Logic</span></div>
+                    </div>
+                    <div class="p-2.5 bg-slate-900/80 rounded-xl border border-slate-700/80 flex items-center gap-2">
+                        <i class="fa-solid fa-database text-emerald-400 text-base"></i>
+                        <div><span class="block font-bold text-white text-[11px]">Local Data</span><span class="text-[9px] text-slate-400">Device Storage</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Student Proponents List -->
+            <div class="bg-slate-800/70 p-4 rounded-2xl border border-slate-700/60 space-y-3">
+                <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-solid fa-users text-emerald-400"></i> Student Proponents
+                </h3>
+                
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="p-2.5 bg-slate-900/80 rounded-xl border border-slate-700/80 space-y-0.5">
+                        <div class="w-6 h-6 bg-emerald-500/20 text-emerald-400 font-bold text-[10px] rounded-full flex items-center justify-center">JA</div>
+                        <h4 class="font-bold text-white text-[11px]">Joshua Cris O. Aguilar</h4>
+                        <p class="text-[9px] text-slate-400">Lead Developer</p>
+                    </div>
+
+                    <div class="p-2.5 bg-slate-900/80 rounded-xl border border-slate-700/80 space-y-0.5">
+                        <div class="w-6 h-6 bg-slate-700 text-slate-300 font-bold text-[10px] rounded-full flex items-center justify-center">CT</div>
+                        <h4 class="font-bold text-white text-[11px]">Cody Telabangco</h4>
+                        <p class="text-[9px] text-slate-400">Group Member</p>
+                    </div>
+
+                    <div class="p-2.5 bg-slate-900/80 rounded-xl border border-slate-700/80 space-y-0.5">
+                        <div class="w-6 h-6 bg-slate-700 text-slate-300 font-bold text-[10px] rounded-full flex items-center justify-center">JP</div>
+                        <h4 class="font-bold text-white text-[11px]">Jhon Lexter Prajes</h4>
+                        <p class="text-[9px] text-slate-400">Group Member</p>
+                    </div>
+
+                    <div class="p-2.5 bg-slate-900/80 rounded-xl border border-slate-700/80 space-y-0.5">
+                        <div class="w-6 h-6 bg-slate-700 text-slate-300 font-bold text-[10px] rounded-full flex items-center justify-center">CP</div>
+                        <h4 class="font-bold text-white text-[11px]">Chester Pantilag</h4>
+                        <p class="text-[9px] text-slate-400">Group Member</p>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-slate-700/60 text-[10px] text-slate-400 flex flex-col gap-1 text-center">
+                    <p><strong class="text-slate-300">Section:</strong> Grade 12 TVL-ICT</p>
+                    <p><strong class="text-slate-300">Subject Teacher:</strong> Rian M. Mabanag</p>
+                    <p><strong class="text-slate-300">Submission Date:</strong> October 20, 2026</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 5: CONTACT PAGE ================= -->
+        <section id="tab-contact" class="tab-content space-y-4">
+            
+            <div class="text-center space-y-1">
+                <h2 class="text-lg font-heading font-bold text-white">Student Feedback & Support</h2>
+                <p class="text-xs text-slate-400">Have suggestions or issues with the Baon App?</p>
+            </div>
+
+            <div class="bg-slate-800/70 p-4 rounded-2xl border border-slate-700/60 space-y-3">
+                <form onsubmit="handleContactSubmit(event)" class="space-y-3">
+                    <div>
+                        <label class="block text-[10px] font-semibold text-slate-300 uppercase tracking-wider mb-1">Student Name / ID</label>
+                        <input type="text" required placeholder="e.g., Juan Dela Cruz" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-semibold text-slate-300 uppercase tracking-wider mb-1">Grade & Section</label>
+                        <input type="text" required placeholder="e.g., Grade 12 TVL-ICT" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-semibold text-slate-300 uppercase tracking-wider mb-1">Feedback / Comment</label>
+                        <textarea rows="3" required placeholder="Share your suggestions..." class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-slate-950 font-bold py-2.5 rounded-xl text-xs shadow-glow transition-all flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-paper-plane"></i> Send Feedback
+                    </button>
+                </form>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Floating Action Quick Log Button (FAB for Mobile) -->
+    <button onclick="openLogModal('expense')" class="fixed right-4 bottom-20 z-40 w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-600 to-emerald-400 text-slate-950 flex items-center justify-center shadow-float active:scale-90 transition-transform">
+        <i class="fa-solid fa-plus text-xl font-bold"></i>
+    </button>
+
+    <!-- Mobile Bottom Navigation Bar (Thumb Friendly) -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-navy-900/95 backdrop-blur-md border-t border-slate-800/90 z-40 pb-safe">
+        <div class="flex items-center justify-around px-2 py-2">
+            <button onclick="switchTab('home')" id="nav-home" class="nav-btn flex flex-col items-center gap-1 py-1 px-3 text-emerald-400 transition-colors">
+                <i class="fa-solid fa-house text-lg"></i>
+                <span class="text-[10px] font-bold">Home</span>
+            </button>
+            <button onclick="switchTab('tracker')" id="nav-tracker" class="nav-btn flex flex-col items-center gap-1 py-1 px-3 text-slate-400 transition-colors">
+                <i class="fa-solid fa-calculator text-lg"></i>
+                <span class="text-[10px] font-medium">Tracker</span>
+            </button>
+            <button onclick="switchTab('savings')" id="nav-savings" class="nav-btn flex flex-col items-center gap-1 py-1 px-3 text-slate-400 transition-colors">
+                <i class="fa-solid fa-piggy-bank text-lg"></i>
+                <span class="text-[10px] font-medium">Savings</span>
+            </button>
+            <button onclick="switchTab('about')" id="nav-about" class="nav-btn flex flex-col items-center gap-1 py-1 px-3 text-slate-400 transition-colors">
+                <i class="fa-solid fa-circle-info text-lg"></i>
+                <span class="text-[10px] font-medium">About</span>
+            </button>
+            <button onclick="switchTab('contact')" id="nav-contact" class="nav-btn flex flex-col items-center gap-1 py-1 px-3 text-slate-400 transition-colors">
+                <i class="fa-solid fa-envelope text-lg"></i>
+                <span class="text-[10px] font-medium">Contact</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Quick Entry Log Bottom Sheet Modal -->
+    <div id="log-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex justify-end flex-col hidden">
+        <div id="log-modal-card" class="bg-navy-900 border-t border-slate-700/80 rounded-t-3xl p-5 space-y-4 max-h-[85vh] overflow-y-auto no-scrollbar shadow-2xl modal-enter">
+            
+            <!-- Modal Header & Toggle -->
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2">
+                    <button id="modal-tab-expense" onclick="toggleModalType('expense')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                        Log Expense
+                    </button>
+                    <button id="modal-tab-allowance" onclick="toggleModalType('allowance')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-400">
+                        Add Allowance
+                    </button>
+                </div>
+                <button onclick="closeLogModal()" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Quick Amount Presets -->
+            <div class="space-y-1.5">
+                <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Quick Preset Amount</span>
+                <div class="flex gap-2 overflow-x-auto no-scrollbar">
+                    <button onclick="setPresetAmount(20)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 rounded-xl text-xs font-bold text-white border border-slate-700 shrink-0">₱20</button>
+                    <button onclick="setPresetAmount(50)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 rounded-xl text-xs font-bold text-white border border-slate-700 shrink-0">₱50</button>
+                    <button onclick="setPresetAmount(100)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 rounded-xl text-xs font-bold text-white border border-slate-700 shrink-0">₱100</button>
+                    <button onclick="setPresetAmount(200)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 rounded-xl text-xs font-bold text-white border border-slate-700 shrink-0">₱200</button>
+                    <button onclick="setPresetAmount(500)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 rounded-xl text-xs font-bold text-white border border-slate-700 shrink-0">₱500</button>
+                </div>
+            </div>
+
+            <!-- Form Body: Log Expense -->
+            <form id="modal-expense-form" onsubmit="handleAddExpenseModal(event)" class="space-y-3">
+                <div>
+                    <label class="block text-[10px] font-semibold text-slate-300 uppercase tracking-wider mb-1">Item Description</label>
+                    <input type="text" id="modal-expense-title" required placeholder="e.g., Rice Meal, Jeepney Fare, Photocopy" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-[10px] font-semibold text-slate-300 uppercase tracking-wider mb-1">Amount (₱)</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs font-bold">₱</span>
+                            <input type="number" id="modal-expense-amount" step="0.01" min="0.5" required placeholder="35.00" class="w-full pl-7 pr-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white font-bold focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-semibold text-slate-300 uppercase tracking-wider mb-1">Category</label>
+                        <select id="modal-expense-category" required class="w-full px-2 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500">
+                            <option value="Food">Food / Snacks</option>
+                            <option value="Transportation">Transportation</option>
+                            <option value="School Supplies">School Supplies</option>
+                            <option value="Projects">Projects & Print</option>
+                            <option value="Savings">Savings</option>
+                            <option value="Others">Others</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-rose-500 hover:bg-rose-600 active:scale-95 text-white font-bold py-3 rounded-xl text-xs shadow-md transition-all flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-check"></i> Save Expense Entry
+                </button>
+            </form>
+
+            <!-- Form Body: Add Allowance -->
+            <form id="modal-allowance-form" onsubmit="handleAddAllowanceModal(event)" class="space-y-3 hidden">
+                <div>
+                    <label class="block text-[10px] font-semibold text-slate-300 uppercase tracking-wider mb-1">Allowance Amount (₱)</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs font-bold">₱</span>
+                        <input type="number" id="modal-allowance-amount" step="0.01" min="1" required placeholder="100.00" class="w-full pl-7 pr-3 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white font-bold focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-slate-950 font-bold py-3 rounded-xl text-xs shadow-glow transition-all flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-plus-circle"></i> Add to Total Allowance
+                </button>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- Notification Toast Message -->
+    <div id="toast-container" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none w-11/12 max-w-xs flex flex-col gap-2"></div>
+
+    <!-- JavaScript Application Core Engine -->
+    <script>
+        // Core State
+        let appState = {
+            totalAllowance: 0,
+            expenses: []
+        };
+
+        let currentActiveTab = 'home';
+        let activeCategoryFilter = 'ALL';
+        let currentModalMode = 'expense';
+
+        // Category Styles Mapping
+        const categoryColors = {
+            'Food': { bg: 'bg-amber-500', text: 'text-amber-400', border: 'border-amber-500/30', lightBg: 'bg-amber-500/10', icon: 'fa-utensils' },
+            'Transportation': { bg: 'bg-blue-500', text: 'text-blue-400', border: 'border-blue-500/30', lightBg: 'bg-blue-500/10', icon: 'fa-bus' },
+            'School Supplies': { bg: 'bg-purple-500', text: 'text-purple-400', border: 'border-purple-500/30', lightBg: 'bg-purple-500/10', icon: 'fa-pen-nib' },
+            'Projects': { bg: 'bg-indigo-500', text: 'text-indigo-400', border: 'border-indigo-500/30', lightBg: 'bg-indigo-500/10', icon: 'fa-print' },
+            'Savings': { bg: 'bg-emerald-500', text: 'text-emerald-400', border: 'border-emerald-500/30', lightBg: 'bg-emerald-500/10', icon: 'fa-piggy-bank' },
+            'Others': { bg: 'bg-slate-500', text: 'text-slate-400', border: 'border-slate-500/30', lightBg: 'bg-slate-500/10', icon: 'fa-tags' }
+        };
+
+        // Initialize Application on DOM Ready
+        window.addEventListener('DOMContentLoaded', () => {
+            loadFromLocalStorage();
+            updateUI();
+        });
+
+        // Tab Navigation Router
+        function switchTab(tabId) {
+            currentActiveTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-emerald-400');
+                btn.classList.add('text-slate-400');
+                btn.querySelector('span').classList.remove('font-bold');
+                btn.querySelector('span').classList.add('font-medium');
+            });
+
+            const selectedTab = document.getElementById(`tab-${tabId}`);
+            const selectedNav = document.getElementById(`nav-${tabId}`);
+
+            if (selectedTab) selectedTab.classList.add('active');
+            if (selectedNav) {
+                selectedNav.classList.add('text-emerald-400');
+                selectedNav.classList.remove('text-slate-400');
+                selectedNav.querySelector('span').classList.add('font-bold');
+            }
+
+            // Scroll to top of scroll container
+            document.getElementById('main-scroll-container').scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Toast Notification Display
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const bgClass = type === 'success' ? 'bg-emerald-500 text-slate-950' : type === 'danger' ? 'bg-rose-500 text-white' : 'bg-slate-800 text-white';
+            const iconClass = type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation';
+
+            toast.className = `${bgClass} text-xs font-bold px-3.5 py-2.5 rounded-2xl shadow-xl flex items-center justify-between transition-all duration-300 pointer-events-auto opacity-0 transform -translate-y-2`;
+            toast.innerHTML = `<div class="flex items-center space-x-2"><i class="fa-solid ${iconClass}"></i><span>${message}</span></div>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-0', '-translate-y-2');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        // Modal Bottom Sheet Handlers
+        function openLogModal(type = 'expense') {
+            toggleModalType(type);
+            const modal = document.getElementById('log-modal');
+            const card = document.getElementById('log-modal-card');
+            modal.classList.remove('hidden');
+            card.classList.remove('modal-leave');
+            card.classList.add('modal-enter');
+        }
+
+        function closeLogModal() {
+            const modal = document.getElementById('log-modal');
+            const card = document.getElementById('log-modal-card');
+            card.classList.remove('modal-enter');
+            card.classList.add('modal-leave');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        function toggleModalType(type) {
+            currentModalMode = type;
+            const expBtn = document.getElementById('modal-tab-expense');
+            const allowBtn = document.getElementById('modal-tab-allowance');
+            const expForm = document.getElementById('modal-expense-form');
+            const allowForm = document.getElementById('modal-allowance-form');
+
+            if (type === 'expense') {
+                expBtn.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30";
+                allowBtn.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-400";
+                expForm.classList.remove('hidden');
+                allowForm.classList.add('hidden');
+            } else {
+                allowBtn.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+                expBtn.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-400";
+                allowForm.classList.remove('hidden');
+                expForm.classList.add('hidden');
+            }
+        }
+
+        function setPresetAmount(amt) {
+            if (currentModalMode === 'expense') {
+                document.getElementById('modal-expense-amount').value = amt;
+            } else {
+                document.getElementById('modal-allowance-amount').value = amt;
+            }
+        }
+
+        // Form Submit Actions
+        function handleAddAllowanceModal(e) {
+            e.preventDefault();
+            const input = document.getElementById('modal-allowance-amount');
+            const amount = parseFloat(input.value);
+
+            if (amount && amount > 0) {
+                appState.totalAllowance += amount;
+                saveToLocalStorage();
+                updateUI();
+                input.value = '';
+                closeLogModal();
+                showToast(`Added ₱${amount.toFixed(2)} to total allowance!`, 'success');
+            }
+        }
+
+        function handleAddExpenseModal(e) {
+            e.preventDefault();
+            const titleInput = document.getElementById('modal-expense-title');
+            const amountInput = document.getElementById('modal-expense-amount');
+            const categoryInput = document.getElementById('modal-expense-category');
+
+            const title = titleInput.value.trim();
+            const amount = parseFloat(amountInput.value);
+            const category = categoryInput.value;
+
+            if (title && amount && amount > 0) {
+                const newExpense = {
+                    id: Date.now(),
+                    title,
+                    amount,
+                    category,
+                    date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                };
+
+                appState.expenses.unshift(newExpense);
+                saveToLocalStorage();
+                updateUI();
+
+                titleInput.value = '';
+                amountInput.value = '';
+                closeLogModal();
+                showToast(`Logged ₱${amount.toFixed(2)} for ${title}`, 'success');
+            }
+        }
+
+        // Delete Expense
+        function deleteExpense(id) {
+            appState.expenses = appState.expenses.filter(item => item.id !== id);
+            saveToLocalStorage();
+            updateUI();
+            showToast('Expense entry deleted', 'danger');
+        }
+
+        // Clear All Application Data
+        function clearAllData() {
+            if (confirm("Reset all allowance and expense records?")) {
+                appState.totalAllowance = 0;
+                appState.expenses = [];
+                saveToLocalStorage();
+                updateUI();
+                showToast("All data cleared successfully", "danger");
+            }
+        }
+
+        // Filter Expense History
+        function setCategoryFilter(cat) {
+            activeCategoryFilter = cat;
+            document.querySelectorAll('.cat-filter-btn').forEach(btn => {
+                btn.className = "cat-filter-btn bg-slate-700 text-slate-300 font-medium px-2.5 py-1 rounded-lg shrink-0";
+            });
+            event.target.className = "cat-filter-btn active bg-emerald-500 text-slate-950 font-bold px-2.5 py-1 rounded-lg shrink-0";
+            renderExpenseCards();
+        }
+
+        // Update Overall UI Elements & Calculated Stats
+        function updateUI() {
+            const totalSpent = appState.expenses.reduce((sum, item) => sum + item.amount, 0);
+            const remainingBalance = appState.totalAllowance - totalSpent;
+
+            const fmt = (num) => '₱' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            // Top Bar
+            document.getElementById('header-balance').textContent = fmt(remainingBalance);
+
+            // Dashboard
+            document.getElementById('home-remaining-balance').textContent = fmt(remainingBalance);
+            document.getElementById('home-total-income').textContent = fmt(appState.totalAllowance);
+            document.getElementById('home-total-spent').textContent = fmt(totalSpent);
+
+            // Budget Progress Bar Calculations
+            let spentPercent = appState.totalAllowance > 0 ? Math.min(100, Math.round((totalSpent / appState.totalAllowance) * 100)) : 0;
+            document.getElementById('home-spent-percent').textContent = `${spentPercent}% spent`;
+            document.getElementById('home-budget-progress-bar').style.width = `${spentPercent}%`;
+
+            // Tracker Header
+            document.getElementById('tracker-balance').textContent = fmt(remainingBalance);
+            document.getElementById('tracker-spent').textContent = fmt(totalSpent);
+            document.getElementById('tracker-allowance').textContent = fmt(appState.totalAllowance);
+
+            // Category Summary Progress Bars
+            renderCategoryBreakdown(totalSpent);
+
+            // Expense Cards List Rendering
+            renderExpenseCards();
+
+            // Recent Expenses Home Preview
+            renderRecentTransactions();
+        }
+
+        // Render Category Progress Bars
+        function renderCategoryBreakdown(totalSpent) {
+            const homeContainer = document.getElementById('home-category-summary');
+            const trackerContainer = document.getElementById('tracker-category-progress');
+            
+            homeContainer.innerHTML = '';
+            trackerContainer.innerHTML = '';
+
+            const categories = ['Food', 'Transportation', 'School Supplies', 'Projects', 'Savings', 'Others'];
+
+            categories.forEach(cat => {
+                const catTotal = appState.expenses
+                    .filter(item => item.category === cat)
+                    .reduce((sum, item) => sum + item.amount, 0);
+
+                const percentage = totalSpent > 0 ? ((catTotal / totalSpent) * 100).toFixed(1) : 0;
+                const config = categoryColors[cat];
+
+                // Mini Item for Home Tab
+                if (catTotal > 0) {
+                    const miniCard = document.createElement('div');
+                    miniCard.className = "space-y-1";
+                    miniCard.innerHTML = `
+                        <div class="flex justify-between text-[11px] font-semibold">
+                            <span class="text-slate-300 flex items-center gap-1.5">
+                                <i class="fa-solid ${config.icon} ${config.text}"></i> ${cat}
+                            </span>
+                            <span class="text-slate-400">₱${catTotal.toFixed(2)} (${percentage}%)</span>
+                        </div>
+                        <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
+                            <div class="${config.bg} h-full transition-all duration-300" style="width: ${percentage}%"></div>
+                        </div>
+                    `;
+                    homeContainer.appendChild(miniCard);
+                }
+
+                // Detailed Bar for Tracker Tab
+                const fullCard = document.createElement('div');
+                fullCard.className = "space-y-1";
+                fullCard.innerHTML = `
+                    <div class="flex justify-between text-xs font-semibold">
+                        <span class="text-slate-200 flex items-center gap-1.5">
+                            <i class="fa-solid ${config.icon} ${config.text}"></i> ${cat}
+                        </span>
+                        <span class="text-slate-300 font-bold">₱${catTotal.toFixed(2)} <span class="text-[10px] font-normal text-slate-400">(${percentage}%)</span></span>
+                    </div>
+                    <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-700/50">
+                        <div class="${config.bg} h-full transition-all duration-500" style="width: ${percentage}%"></div>
+                    </div>
+                `;
+                trackerContainer.appendChild(fullCard);
+            });
+
+            if (homeContainer.children.length === 0) {
+                homeContainer.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-2">No category data logged yet.</p>`;
+            }
+        }
+
+        // Render Mobile Transaction Cards Stream
+        function renderExpenseCards() {
+            const container = document.getElementById('tracker-transactions-list');
+            const searchVal = document.getElementById('tracker-search-input')?.value.toLowerCase() || '';
+
+            container.innerHTML = '';
+
+            let filtered = appState.expenses;
+
+            if (activeCategoryFilter !== 'ALL') {
+                filtered = filtered.filter(item => item.category === activeCategoryFilter);
+            }
+
+            if (searchVal) {
+                filtered = filtered.filter(item => item.title.toLowerCase().includes(searchVal));
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-400 space-y-1">
+                        <i class="fa-solid fa-receipt text-2xl text-slate-600 block"></i>
+                        <p class="text-xs font-medium">No expenses match your view.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const config = categoryColors[item.category] || categoryColors['Others'];
+                const card = document.createElement('div');
+                card.className = "bg-slate-900/80 p-3 rounded-xl border border-slate-700/60 flex items-center justify-between gap-2 shadow-sm";
+                card.innerHTML = `
+                    <div class="flex items-center space-x-3 min-w-0">
+                        <div class="w-9 h-9 rounded-xl ${config.lightBg} ${config.text} border ${config.border} flex items-center justify-center text-xs shrink-0">
+                            <i class="fa-solid ${config.icon}"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="font-bold text-xs text-white truncate">${escapeHtml(item.title)}</h4>
+                            <div class="flex items-center space-x-2 text-[10px] text-slate-400">
+                                <span>${item.date}</span>
+                                <span>•</span>
+                                <span class="${config.text} font-medium">${item.category}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 shrink-0">
+                        <span class="font-bold text-xs text-rose-400">-₱${item.amount.toFixed(2)}</span>
+                        <button onclick="deleteExpense(${item.id})" class="text-slate-500 hover:text-rose-400 p-1 text-xs">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Render Home Recent Transactions
+        function renderRecentTransactions() {
+            const container = document.getElementById('home-recent-transactions');
+            container.innerHTML = '';
+
+            const recents = appState.expenses.slice(0, 3);
+
+            if (recents.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-2">No transactions recorded yet.</p>`;
+                return;
+            }
+
+            recents.forEach(item => {
+                const config = categoryColors[item.category] || categoryColors['Others'];
+                const card = document.createElement('div');
+                card.className = "bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/40 flex items-center justify-between text-xs";
+                card.innerHTML = `
+                    <div class="flex items-center space-x-2.5 min-w-0">
+                        <div class="w-7 h-7 rounded-lg ${config.lightBg} ${config.text} flex items-center justify-center text-xs shrink-0">
+                            <i class="fa-solid ${config.icon}"></i>
+                        </div>
+                        <span class="font-semibold text-slate-200 truncate">${escapeHtml(item.title)}</span>
+                    </div>
+                    <span class="font-bold text-rose-400 shrink-0">-₱${item.amount.toFixed(2)}</span>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Savings Goal Calculator Algorithm
+        function calculateSavingsGoal(e) {
+            e.preventDefault();
+            const name = document.getElementById('goal-name').value.trim();
+            const targetAmount = parseFloat(document.getElementById('goal-target-amount').value);
+            const targetDays = parseInt(document.getElementById('goal-target-days').value);
+
+            if (!name || !targetAmount || !targetDays || targetDays <= 0) return;
+
+            const dailySavings = targetAmount / targetDays;
+            const weeklySavings = dailySavings * 5;
+
+            const totalSpent = appState.expenses.reduce((sum, item) => sum + item.amount, 0);
+            const currentBalance = Math.max(0, appState.totalAllowance - totalSpent);
+            const coveragePercent = Math.min(100, ((currentBalance / targetAmount) * 100)).toFixed(1);
+
+            document.getElementById('res-goal-title').textContent = name;
+            document.getElementById('res-daily-savings').textContent = `₱${dailySavings.toFixed(2)} / day`;
+            document.getElementById('res-weekly-savings').textContent = `₱${weeklySavings.toFixed(2)} / week`;
+            document.getElementById('res-coverage-percent').textContent = `${coveragePercent}%`;
+            document.getElementById('res-coverage-bar').style.width = `${coveragePercent}%`;
+
+            let advice = "";
+            if (currentBalance >= targetAmount) {
+                advice = "🎉 Excellent! Your active remaining balance already fully covers this target!";
+            } else {
+                const needed = targetAmount - currentBalance;
+                advice = `To reach this in ${targetDays} days, reserve ₱${dailySavings.toFixed(2)} each school day. You need ₱${needed.toFixed(2)} more.`;
+            }
+            document.getElementById('res-advice-text').textContent = advice;
+
+            document.getElementById('savings-results-card').classList.remove('hidden');
+            showToast("Savings target computed!", "success");
+        }
+
+        // Contact Form
+        function handleContactSubmit(e) {
+            e.preventDefault();
+            showToast("Feedback sent successfully!", "success");
+            e.target.reset();
+        }
+
+        // Local Storage Utilities
+        function saveToLocalStorage() {
+            localStorage.setItem('baon_budget_mobile_data', JSON.stringify(appState));
+        }
+
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('baon_budget_mobile_data');
+            if (saved) {
+                try {
+                    appState = JSON.parse(saved);
+                } catch (err) {
+                    console.error("Local data parse error", err);
+                }
+            } else {
+                // Initial Mobile Demo Seed
+                appState = {
+                    totalAllowance: 500,
+                    expenses: [
+                        { id: 101, title: 'Rice Meal & Snacks', amount: 65, category: 'Food', date: 'Oct 19' },
+                        { id: 102, title: 'Jeepney & Bus Fare', amount: 30, category: 'Transportation', date: 'Oct 19' },
+                        { id: 103, title: 'ICT Project Photocopying', amount: 25, category: 'Projects', date: 'Oct 19' }
+                    ]
+                };
+                saveToLocalStorage();
+            }
+        }
+
+        // Utility HTML Escaper
+        function escapeHtml(str) {
+            return str.replace(/[&<>"']/g, function(m) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                }[m];
+            });
+        }
+    </script>
+</body>
+</html>
